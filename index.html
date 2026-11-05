@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<!--APP-START-->
+<title>Fiesta Robot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Una sola pantalla: cabecera · alfombra con el robot · tira del programa · panel de la pestaña · pestañas abajo */
+:root{
+  --bg:#E9F6F1;        /* papel menta */
+  --surface:#FFFFFF;
+  --ink:#10302B;
+  --muted:#5B7A73;
+  --line:#CFE6DE;
+  --shell:#14A88E;     /* carcasa verde agua de EaRL */
+  --shell-2:#0C7E6B;
+  --go:#1FC46B;
+  --pink:#FF4FA0;
+  --yellow:#FFC93C;
+  --led:#3AA0FF;
+  --mat:#FFFDF6;
+  --mat-line:#D9EDE6;
+  --danger:#E5484D;
+  --display:"Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Nunito",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --radius:20px;
+  --shadow:0 2px 0 rgba(16,48,43,.06),0 12px 28px -14px rgba(16,48,43,.35);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1F1C; --surface:#13302B; --ink:#E8FBF5; --muted:#8FB5AC; --line:#1F4740;
+    --mat:#0F2824; --mat-line:#1C433C; --shell:#19C2A4; --shell-2:#0E8C77;
+    --shadow:0 2px 0 rgba(0,0,0,.2),0 14px 30px -14px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1F1C; --surface:#13302B; --ink:#E8FBF5; --muted:#8FB5AC; --line:#1F4740;
+  --mat:#0F2824; --mat-line:#1C433C; --shell:#19C2A4; --shell-2:#0E8C77;
+  --shadow:0 2px 0 rgba(0,0,0,.2),0 14px 30px -14px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;box-sizing:border-box}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;
+  overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:3px solid var(--led);outline-offset:2px}
+.app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Cabecera */
+header{display:flex;align-items:center;gap:10px;padding-block:10px 8px;flex:none}
+.logo{width:40px;height:40px;flex:none}
+.brand{flex:1;min-width:0}
+.brand h1{font-family:var(--display);font-weight:800;font-size:25px;line-height:1;margin:0;letter-spacing:-.01em}
+.brand p{margin:1px 0 0;font-size:13px;color:var(--muted);font-weight:700}
+.pill{height:40px;min-width:40px;padding:0 12px;border-radius:14px;background:var(--surface);border:2px solid var(--line);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;font-size:15px}
+.pill:active{transform:scale(.95)}
+
+/* Alfombra */
+.stage-wrap{flex:none;display:flex;justify-content:center}
+.mat{position:relative;border-radius:18px;background-color:var(--mat);
+  background-image:linear-gradient(var(--mat-line) 2px,transparent 2px),linear-gradient(90deg,var(--mat-line) 2px,transparent 2px);
+  background-size:var(--cell) var(--cell);background-position:-1px -1px;
+  border:3px solid var(--line);box-shadow:var(--shadow);overflow:hidden;transition:background-color .2s}
+.mat.disco{animation:none}
+.mat .glow{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .15s;
+  background:radial-gradient(circle at 30% 30%,var(--pink),transparent 55%),radial-gradient(circle at 75% 70%,var(--led),transparent 55%)}
+.mat.flash .glow{opacity:.28;transition:none}
+.star{position:absolute;width:var(--cell);height:var(--cell);display:grid;place-items:center;font-size:calc(var(--cell)*.55);
+  transform:translate(calc(var(--sx)*var(--cell)),calc(var(--sy)*var(--cell)));animation:twinkle 1.6s ease-in-out infinite}
+@keyframes twinkle{50%{scale:1.15;rotate:12deg}}
+.bot{position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);
+  transform:translate(calc(var(--x)*var(--cell)),calc(var(--y)*var(--cell)));
+  transition:transform var(--d,600ms) cubic-bezier(.45,.05,.35,1);z-index:2}
+.bot .rot{width:100%;height:100%;transform:rotate(var(--r,0deg));transition:transform var(--d,600ms) cubic-bezier(.45,.05,.35,1)}
+.bot .fx{width:100%;height:100%;padding:8%}
+.bot svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}
+.fx.wig{animation:wig var(--d) ease-in-out}
+.fx.hop{animation:hop var(--d) ease-in-out}
+.fx.bump{animation:bump var(--d) ease-in-out}
+.fx.sway{animation:sway var(--d) ease-in-out}
+@keyframes wig{20%{transform:rotate(-22deg)}40%{transform:rotate(22deg)}60%{transform:rotate(-22deg)}80%{transform:rotate(22deg)}}
+@keyframes hop{50%{transform:scale(1.3)}}
+@keyframes bump{40%{transform:translateY(-28%)}60%{transform:translateY(-28%) rotate(8deg)}}
+@keyframes sway{30%{transform:rotate(-30deg) scale(1.1)}70%{transform:rotate(30deg) scale(1.1)}}
+.led{fill:var(--led);transition:fill .15s}
+.bubble{position:absolute;z-index:3;left:50%;top:6px;transform:translateX(-50%);background:var(--surface);color:var(--ink);
+  border:2px solid var(--line);border-radius:14px;padding:4px 12px;font-weight:800;font-size:15px;white-space:nowrap;
+  box-shadow:var(--shadow);max-width:90%;overflow:hidden;text-overflow:ellipsis}
+.note{position:absolute;z-index:1;font-size:22px;pointer-events:none;animation:floatUp 1.4s ease-out forwards}
+@keyframes floatUp{to{transform:translateY(-70px) rotate(20deg);opacity:0}}
+
+/* Tira del programa */
+.strip-head{display:flex;align-items:center;gap:8px;padding-block:10px 4px;flex:none}
+.strip-head b{font-family:var(--display);font-size:17px;flex:1}
+.strip-head span{font-size:13px;color:var(--muted);font-weight:800;font-variant-numeric:tabular-nums}
+.mini{height:34px;padding:0 12px;border-radius:12px;background:var(--surface);border:2px solid var(--line);font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:4px}
+.mini:active{transform:scale(.95)}
+.strip{flex:none;display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;min-height:64px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.strip::-webkit-scrollbar{display:none}
+.card{flex:none;width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:24px;position:relative;
+  background:var(--surface);border:2px solid var(--line);box-shadow:0 2px 0 var(--line);transition:transform .15s}
+.card svg{width:26px;height:26px}
+.card.mv{background:color-mix(in srgb,var(--yellow) 30%,var(--surface));border-color:color-mix(in srgb,var(--yellow) 70%,var(--line))}
+.card.now{transform:translateY(-4px) scale(1.08);border-color:var(--go);box-shadow:0 0 0 3px color-mix(in srgb,var(--go) 40%,transparent)}
+.card .n{position:absolute;bottom:-1px;right:3px;font-size:10px;font-weight:800;color:var(--muted)}
+.card .dot{position:absolute;top:5px;right:5px;width:10px;height:10px;border-radius:50%}
+.empty-strip{font-size:14px;color:var(--muted);font-weight:700;padding:14px 4px;line-height:1.3}
+
+/* Panel */
+.panel{flex:1;min-height:0;overflow-y:auto;padding-block:4px 12px;-webkit-overflow-scrolling:touch}
+.view[hidden]{display:none}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:340px;margin:0 auto}
+.key{height:clamp(58px,9.5vh,80px);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-weight:800;font-size:12px;color:#10302B;box-shadow:0 5px 0 rgba(0,0,0,.18);transition:transform .08s,box-shadow .08s;position:relative}
+.key:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.key svg{width:34px;height:34px}
+.key .e{font-size:28px;line-height:1}
+.k-move{background:var(--yellow)}
+.k-pink{background:var(--pink);color:#fff}
+.k-go{background:var(--go);color:#fff;font-family:var(--display);font-size:26px;border-radius:50%}
+.k-go.stop{background:var(--danger)}
+.funs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.fun{border-radius:16px;background:var(--surface);border:2px solid var(--line);padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:12px;font-weight:800;box-shadow:0 3px 0 var(--line)}
+.fun .e{font-size:26px;line-height:1.1}
+.fun:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row .mini{flex:1;justify-content:center;height:42px;font-size:15px}
+
+.sec{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.sec h2{font-family:var(--display);font-size:20px;margin:0 0 4px;line-height:1.15;text-wrap:balance}
+.sec p{margin:0 0 10px;font-size:14.5px;line-height:1.45;color:var(--muted);font-weight:600}
+.sec p b{color:var(--ink)}
+.songs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.song{border-radius:16px;padding:10px;text-align:left;border:2px solid var(--line);background:var(--bg);display:flex;align-items:center;gap:8px;min-width:0}
+.song .e{font-size:28px}
+.song b{display:block;font-size:14.5px;line-height:1.15}
+.song small{font-size:12px;color:var(--muted);font-weight:800}
+.song.on{border-color:var(--pink);background:color-mix(in srgb,var(--pink) 14%,var(--surface))}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:38px;padding:0 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);font-weight:800;font-size:14px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.big{width:100%;height:60px;border-radius:20px;font-family:var(--display);font-size:22px;font-weight:800;color:#fff;
+  background:var(--pink);box-shadow:0 5px 0 color-mix(in srgb,var(--pink) 60%,#000);margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.big:active{transform:translateY(4px);box-shadow:0 1px 0 color-mix(in srgb,var(--pink) 60%,#000)}
+.big.green{background:var(--go);box-shadow:0 5px 0 color-mix(in srgb,var(--go) 60%,#000)}
+.big.stop{background:var(--danger);box-shadow:0 5px 0 color-mix(in srgb,var(--danger) 60%,#000)}
+.big[disabled]{opacity:.5}
+.lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+input[type=range]{width:100%;accent-color:var(--pink);height:30px}
+.tempo{display:flex;align-items:center;gap:10px;font-weight:800;font-variant-numeric:tabular-nums}
+.tempo span{min-width:76px;text-align:right}
+.file{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:16px;border:2px dashed var(--line);font-weight:800;margin-top:8px;cursor:pointer}
+.file input{display:none}
+.mic{width:120px;height:120px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;font-size:52px;background:var(--pink);
+  box-shadow:0 6px 0 color-mix(in srgb,var(--pink) 60%,#000)}
+.mic.on{animation:pulse 1s ease-in-out infinite;background:var(--danger)}
+@keyframes pulse{50%{box-shadow:0 6px 0 color-mix(in srgb,var(--danger) 60%,#000),0 0 0 18px color-mix(in srgb,var(--danger) 25%,transparent)}}
+.heard{min-height:24px;text-align:center;font-weight:800;margin-top:12px}
+.words{font-size:13.5px;color:var(--muted);font-weight:700;text-align:center;line-height:1.6;margin-top:6px}
+.say-in{display:flex;gap:8px;margin-top:8px}
+.say-in input{flex:1;min-width:0;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px;font:inherit;font-weight:700;-webkit-user-select:text;user-select:text}
+.seq{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.seq .card{width:44px;height:44px;font-size:20px}
+.seq .card.skip{opacity:.35}
+.guide{text-align:center;padding:10px 0}
+.guide .bigkey{width:104px;height:104px;margin:6px auto;border-radius:32px;display:grid;place-items:center;background:var(--yellow);color:#10302B;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+.guide .bigkey svg{width:58px;height:58px}
+.guide .bigkey.goK{background:var(--go);border-radius:50%;color:#fff;font-family:var(--display);font-size:40px;font-weight:800}
+.guide .bigkey.pk{background:var(--pink)}
+.guide .step{font-family:var(--display);font-size:22px;font-weight:800}
+.guide small{display:block;color:var(--muted);font-weight:800;font-variant-numeric:tabular-nums}
+.ol{margin:0;padding-left:20px;font-size:14.5px;line-height:1.5;color:var(--muted);font-weight:600}
+.ol li{margin-bottom:4px}
+.ol b{color:var(--ink)}
+a{color:var(--shell-2);font-weight:800}
+.meas{font-family:var(--display);font-size:24px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0}
+
+/* Pestañas */
+nav.tabs{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-block:8px 10px;border-top:2px solid var(--line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;border-radius:16px;font-size:12.5px;font-weight:800;color:var(--muted)}
+.tab .e{font-size:24px;line-height:1.1;filter:grayscale(.6);opacity:.8}
+.tab.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tab.on .e{filter:none;opacity:1}
+
+/* Hoja inferior */
+.scrim{position:fixed;inset:0;background:rgba(5,20,18,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:560px;margin:0 auto;max-height:75%;overflow:auto;
+  background:var(--surface);border-radius:26px 26px 0 0;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.3,1);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet.on{transform:none}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.sheet h3{font-family:var(--display);font-size:22px;margin:0 0 10px}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pick{border-radius:18px;border:2px solid var(--line);background:var(--bg);padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:800;font-size:13px;min-width:0}
+.pick .e{font-size:32px;line-height:1}
+.pick .sw{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.7);box-shadow:0 0 0 2px var(--line)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;border:2px solid var(--line);background:var(--bg);text-align:left;width:100%}
+.item .e{font-size:26px}
+.item .m{flex:1;min-width:0}
+.item b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item small{color:var(--muted);font-weight:700}
+.item .x{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:18px}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:40;transform:translate(-50%,10px);opacity:0;transition:.2s;pointer-events:none;
+  background:var(--ink);color:var(--bg);font-weight:800;font-size:15px;padding:10px 16px;border-radius:16px;max-width:calc(100% - 40px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+canvas.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+
+@media (max-width:400px), (max-height:700px){.brand p{display:none}.brand h1{white-space:nowrap}.strip-head{padding-block:6px 2px}}
+@media (prefers-reduced-motion: reduce){
+  .bot,.bot .rot{transition-duration:1ms!important}
+  .fx,.star,.note,.mic.on{animation:none!important}
+}
+</style>
+
+<div class="app">
+  <header>
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <ellipse cx="20" cy="21" rx="17" ry="16" fill="var(--shell)"/>
+      <ellipse cx="20" cy="21" rx="12" ry="11" fill="var(--shell-2)" opacity=".5"/>
+      <circle cx="14" cy="15" r="4.5" fill="#fff"/><circle cx="26" cy="15" r="4.5" fill="#fff"/>
+      <circle cx="14" cy="14" r="2" fill="#10302B"/><circle cx="26" cy="14" r="2" fill="#10302B"/>
+      <rect x="17" y="1" width="6" height="7" rx="3" fill="var(--pink)"/>
+      <circle cx="20" cy="26" r="3.5" fill="var(--go)"/>
+    </svg>
+    <div class="brand"><h1>Fiesta Robot</h1><p id="sub">Programa y baila con EaRL</p></div>
+    <button class="pill" id="speedBtn" aria-label="Velocidad">🐇</button>
+    <button class="pill" id="starsBtn" aria-label="Estrellas conseguidas">⭐ <span id="stars">0</span></button>
+  </header>
+
+  <div class="stage-wrap"><div class="mat" id="mat">
+    <div class="glow"></div>
+    <div class="star" id="star">⭐</div>
+    <div class="bot" id="bot"><div class="rot"><div class="fx" id="fx">
+      <svg viewBox="0 0 100 100" aria-label="Robot EaRL">
+        <rect x="42" y="-4" width="16" height="20" rx="8" fill="#FF5A6E"/>
+        <ellipse cx="50" cy="54" rx="44" ry="42" fill="var(--shell)" stroke="var(--shell-2)" stroke-width="3"/>
+        <ellipse cx="50" cy="58" rx="30" ry="28" fill="var(--shell-2)" opacity=".35"/>
+        <circle class="led" cx="20" cy="40" r="5"/><circle class="led" cx="80" cy="40" r="5"/>
+        <circle class="led" cx="22" cy="74" r="5"/><circle class="led" cx="78" cy="74" r="5"/>
+        <circle cx="36" cy="30" r="11" fill="#fff"/><circle cx="64" cy="30" r="11" fill="#fff"/>
+        <circle cx="36" cy="27" r="5" fill="#10302B"/><circle cx="64" cy="27" r="5" fill="#10302B"/>
+        <circle cx="38" cy="25" r="1.8" fill="#fff"/><circle cx="66" cy="25" r="1.8" fill="#fff"/>
+        <circle cx="50" cy="48" r="6" fill="#FFC93C"/><circle cx="50" cy="74" r="6" fill="#FFC93C"/>
+        <circle cx="37" cy="61" r="6" fill="#FFC93C"/><circle cx="63" cy="61" r="6" fill="#FFC93C"/>
+        <circle cx="50" cy="61" r="7" fill="#1FC46B"/>
+        <circle cx="37" cy="48" r="4.5" fill="#FF4FA0"/><circle cx="63" cy="48" r="4.5" fill="#FF4FA0"/>
+      </svg>
+    </div></div></div>
+    <div class="bubble" id="bubble" hidden></div>
+  </div></div>
+
+  <div class="strip-head">
+    <b>Mi programa</b><span id="count">0 pasos</span>
+    <button class="mini" id="undoBtn" aria-label="Quitar el último paso">↩️</button>
+    <button class="mini" id="clearBtn" aria-label="Borrar el programa">🗑️</button>
+  </div>
+  <div class="strip" id="strip"></div>
+
+  <main class="panel" id="panel">
+    <!-- PROGRAMAR -->
+    <section class="view" id="v-prog">
+      <div class="pad">
+        <button class="key k-pink" data-add="wait"><span class="e">⏸️</span>Pausa</button>
+        <button class="key k-move" data-add="fwd"><svg viewBox="0 0 24 24"><path d="M12 4l7 8h-4.5v8h-5v-8H5z" fill="currentColor"/></svg>Adelante</button>
+        <button class="key k-pink" data-pick="beep"><span class="e">🎺</span>Sonido</button>
+        <button class="key k-move" data-add="left"><svg viewBox="0 0 24 24"><path d="M10 5L4 11l6 6v-4h4a4 4 0 0 1 4 4v2h3v-2a7 7 0 0 0-7-7h-4z" fill="currentColor"/></svg>Izquierda</button>
+        <button class="key k-go" id="goBtn">GO</button>
+        <button class="key k-move" data-add="right"><svg viewBox="0 0 24 24"><path d="M14 5l6 6-6 6v-4h-4a4 4 0 0 0-4 4v2H3v-2a7 7 0 0 1 7-7h4z" fill="currentColor"/></svg>Derecha</button>
+        <button class="key k-pink" data-pick="light"><span class="e">💡</span>Luz</button>
+        <button class="key k-move" data-add="back"><svg viewBox="0 0 24 24"><path d="M12 20l7-8h-4.5V4h-5v8H5z" fill="currentColor"/></svg>Atrás</button>
+        <button class="key k-pink" data-pick="say"><span class="e">💬</span>Hablar</button>
+      </div>
+      <div class="funs">
+        <button class="fun" data-add="spin"><span class="e">🌀</span>Giro loco</button>
+        <button class="fun" data-add="wiggle"><span class="e">💃</span>Meneo</button>
+        <button class="fun" data-add="hop"><span class="e">🐸</span>Salto</button>
+        <button class="fun" data-pick="voice"><span class="e">🗣️</span>Mi voz</button>
+      </div>
+      <div class="row">
+        <button class="mini" id="saveBtn">💾 Guardar</button>
+        <button class="mini" id="loadBtn">📂 Mis programas</button>
+        <button class="mini" id="newStarBtn">⭐ Otra estrella</button>
+      </div>
+    </section>
+
+    <!-- BAILAR -->
+    <section class="view" id="v-dance" hidden>
+      <div class="sec">
+        <h2>Elige una canción</h2>
+        <div class="songs" id="songs"></div>
+        <label class="file"><input type="file" id="fileIn" accept="audio/*">🎧 Usar una canción mía</label>
+        <div class="lbl">Ritmo</div>
+        <div class="tempo"><input type="range" id="tempo" min="60" max="170" step="1" value="112" aria-label="Ritmo"><span id="tempoTxt">112 /min</span></div>
+        <div class="lbl">Cómo baila EaRL</div>
+        <div class="chips" id="styles">
+          <button class="chip on" data-style="robot">🤖 Robot</button>
+          <button class="chip" data-style="loco">🤪 Loco</button>
+          <button class="chip" data-style="suave">🌊 Suave</button>
+          <button class="chip" data-style="prog">🧩 Mi programa</button>
+        </div>
+        <button class="big" id="danceBtn">💃 ¡A bailar!</button>
+      </div>
+      <div class="sec">
+        <h2>Bailar con la música de casa</h2>
+        <p>Pon música en otro aparato. EaRL escucha por el micrófono y se mueve con cada golpe de ritmo.</p>
+        <button class="big green" id="listenBtn">👂 Escuchar la música</button>
+      </div>
+    </section>
+
+    <!-- VOZ -->
+    <section class="view" id="v-voice" hidden>
+      <div class="sec" style="text-align:center">
+        <h2>Dale órdenes con tu voz</h2>
+        <div class="chips" style="justify-content:center;margin:6px 0 4px" id="voiceMode">
+          <button class="chip on" data-vm="add">✍️ Apuntar</button>
+          <button class="chip" data-vm="now">⚡ Hacer ya</button>
+        </div>
+        <button class="mic" id="micBtn" aria-label="Hablar">🎤</button>
+        <div class="heard" id="heard">Toca el micro y di: «adelante dos»</div>
+        <div class="words">adelante · atrás · izquierda · derecha · baila · gira · salta · luz · sonido · espera · ¡vamos! · para · borra</div>
+      </div>
+      <div class="sec">
+        <h2>Graba un mensaje</h2>
+        <p>Graba tu voz (hasta 5 segundos) y EaRL la dirá en tu programa.</p>
+        <button class="big" id="recBtn">⏺️ Grabar mi voz</button>
+        <div class="list" id="clips" style="margin-top:10px"></div>
+      </div>
+      <div class="sec">
+        <h2>Que EaRL diga algo</h2>
+        <div class="chips" id="phrases"></div>
+        <div class="say-in"><input id="sayTxt" maxlength="60" placeholder="Escribe qué dirá EaRL" aria-label="Frase para EaRL"><button class="mini" id="sayAdd" style="height:44px">➕</button></div>
+      </div>
+    </section>
+
+    <!-- EaRL DE VERDAD -->
+    <section class="view" id="v-real" hidden>
+      <div class="sec" id="copySec">
+        <h2>Pasa el programa a EaRL</h2>
+        <p>El móvil no puede enviar órdenes a EaRL, así que <b>tú pulsas sus botones</b>. Te digo cuáles, uno a uno.</p>
+        <div class="seq" id="realSeq"></div>
+        <p id="realNote" style="font-size:13px"></p>
+        <div id="guide" class="guide" hidden></div>
+        <button class="big green" id="guideBtn">👉 Guíame paso a paso</button>
+      </div>
+      <div class="sec">
+        <h2>EaRL baila con la música</h2>
+        <ol class="ol">
+          <li>Mete el programa en EaRL (arriba).</li>
+          <li><b>Mide a EaRL:</b> pulsa GO en EaRL y «Empieza» aquí a la vez. Cuando pare, pulsa «Ya paró».</li>
+          <li>Elige canción en <b>Bailar</b> y vuelve aquí. Cuenta atrás, pulsa GO… ¡y a bailar!</li>
+        </ol>
+        <div class="meas" id="measTxt">Sin medir · 1 paso por segundo</div>
+        <div class="row" style="margin-top:4px">
+          <button class="mini" id="measBtn">⏱️ Empieza</button>
+        </div>
+        <button class="big" id="realDanceBtn">🎶 3, 2, 1… ¡GO!</button>
+      </div>
+      <div class="sec">
+        <h2>Con el ordenador</h2>
+        <p>EaRL 2 también se programa con <b>Scratch 2.0</b> en un PC con Windows, por cable USB, con el programa «EaRL Scratch Helper». Enciende EaRL, conéctalo y mantén <b>GO 5 segundos</b> hasta que parpadee en azul.</p>
+        <p><a href="https://www.hope-education.co.uk/earl-has-landed" target="_blank" rel="noopener">Descargas de EaRL (Hope Education)</a></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-tab="prog"><span class="e">🧩</span>Programar</button>
+    <button class="tab" data-tab="dance"><span class="e">🎵</span>Bailar</button>
+    <button class="tab" data-tab="voice"><span class="e">🎤</span>Voz</button>
+    <button class="tab" data-tab="real"><span class="e">🤖</span>EaRL real</button>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><h3 id="sheetT"></h3><div id="sheetB"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<canvas class="confetti" id="confetti" hidden></canvas>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('fiesta.' + k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('fiesta.' + k, JSON.stringify(v)); }catch(e){} }
+};
+function toast(m, ms){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms || 2200); }
+
+/* ---------- Sonido ---------- */
+let ctx = null, master = null;
+function audio(){
+  if (!ctx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = .8; master.connect(ctx.destination);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+document.addEventListener('pointerdown', audio, { once: true });
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function tone(f, dur, type, vol, t, slideTo){
+  const a = audio(); if (!a) return;
+  t = t || a.currentTime;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(f, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || .15, t + .01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+}
+let noiseBuf = null;
+function noise(dur, vol, t, freq, ftype){
+  const a = audio(); if (!a) return;
+  t = t || a.currentTime;
+  if (!noiseBuf){ noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = a.createBufferSource(); s.buffer = noiseBuf;
+  const f = a.createBiquadFilter(); f.type = ftype || 'highpass'; f.frequency.value = freq || 6000;
+  const g = a.createGain(); g.gain.setValueAtTime(vol || .2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + .02);
+}
+const SFX = {
+  move(){ tone(660, .08, 'square', .08); setTimeout(() => tone(880, .08, 'square', .08), 90); },
+  turn(){ tone(500, .2, 'triangle', .14, 0, 900); },
+  bump(){ tone(150, .25, 'sawtooth', .15, 0, 80); },
+  spin(){ tone(300, .6, 'triangle', .15, 0, 1400); },
+  hop(){ tone(400, .18, 'sine', .2, 0, 1000); },
+  add(){ tone(1046, .06, 'sine', .12); },
+  win(){ [72, 76, 79, 84].forEach((m, i) => { const a = audio(); a && tone(mtof(m), .18, 'square', .1, a.currentTime + i * .1); }); },
+  trompeta(){ const a = audio(); if (!a) return; [67, 72].forEach((m, i) => tone(mtof(m), .25, 'sawtooth', .12, a.currentTime + i * .22)); },
+  tambor(){ const a = audio(); if (!a) return; for (let i = 0; i < 4; i++){ tone(120, .15, 'sine', .4, a.currentTime + i * .12, 50); noise(.08, .15, a.currentTime + i * .12, 1500); } },
+  claxon(){ const a = audio(); if (!a) return; tone(392, .22, 'square', .1, a.currentTime); tone(494, .22, 'square', .08, a.currentTime); tone(392, .3, 'square', .1, a.currentTime + .28); tone(494, .3, 'square', .08, a.currentTime + .28); },
+  risa(){ const a = audio(); if (!a) return; for (let i = 0; i < 5; i++) tone(700 - i * 40, .1, 'triangle', .14, a.currentTime + i * .13, 500 - i * 40); },
+  pedorreta(){ const a = audio(); if (!a) return; tone(90, .5, 'sawtooth', .18, a.currentTime, 60); noise(.5, .12, a.currentTime, 300, 'lowpass'); },
+  laser(){ tone(1600, .35, 'square', .1, 0, 200); }
+};
+const SOUNDS = [
+  ['trompeta', '🎺', 'Trompeta'], ['tambor', '🥁', 'Tambor'], ['claxon', '🚗', 'Claxon'],
+  ['risa', '😂', 'Risa'], ['pedorreta', '💨', 'Pedorreta'], ['laser', '🔫', 'Láser']
+];
+const COLORS = [['#3AA0FF', 'Azul'], ['#FF3B5C', 'Rojo'], ['#1FC46B', 'Verde'], ['#FFC93C', 'Amarillo'], ['#B65CFF', 'Morado'], ['#FF8A2A', 'Naranja']];
+const PHRASES = ['¡Hola!', '¡Soy EaRL!', '¡Qué divertido!', '¡Te quiero!', '¡Bien hecho!', '¡Allá voy!', '¡Ups!', '¡A bailar!'];
+
+function speak(text, onEnd){
+  try{
+    const ss = window.speechSynthesis; if (!ss) { onEnd && onEnd(); return false; }
+    ss.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; u.pitch = 1.6; u.rate = 1.05;
+    const v = ss.getVoices().find(v => /^es/i.test(v.lang)); if (v) u.voice = v;
+    if (onEnd){ u.onend = onEnd; u.onerror = onEnd; }
+    ss.speak(u); return true;
+  }catch(e){ onEnd && onEnd(); return false; }
+}
+
+/* ---------- Alfombra y robot ---------- */
+const COLS = 6, ROWS = 5;
+const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+const R = { x: 0, y: 4, dir: 0, rot: 0 };
+const mat = $('mat'), bot = $('bot'), fx = $('fx');
+let cell = 50;
+function layout(){
+  const w = mat.parentElement.clientWidth;
+  const maxH = Math.max(150, window.innerHeight * .27);
+  cell = Math.floor(Math.min(w / COLS, maxH / ROWS));
+  mat.style.setProperty('--cell', cell + 'px');
+  mat.style.width = (cell * COLS + 6) + 'px'; mat.style.height = (cell * ROWS + 6) + 'px';
+}
+window.addEventListener('resize', layout);
+function place(d){
+  bot.style.setProperty('--d', d + 'ms'); bot.style.setProperty('--x', R.x); bot.style.setProperty('--y', R.y); bot.style.setProperty('--r', R.rot + 'deg');
+  fx.style.setProperty('--d', d + 'ms');
+}
+function setLed(c){ document.documentElement.style.setProperty('--led', c); }
+function playFx(cls, d){
+  fx.classList.remove('wig', 'hop', 'bump', 'sway'); void fx.offsetWidth;
+  fx.style.setProperty('--d', d + 'ms'); fx.classList.add(cls);
+  setTimeout(() => fx.classList.remove(cls), d);
+}
+function bubble(text, ms){
+  const b = $('bubble'); b.textContent = text; b.hidden = false;
+  clearTimeout(bubble.t); bubble.t = setTimeout(() => b.hidden = true, ms || 1600);
+}
+function inBounds(x, y){ return x >= 0 && y >= 0 && x < COLS && y < ROWS; }
+
+let speed = store.get('speed', 1); // 0 tortuga, 1 normal, 2 liebre
+const SPEEDS = [1100, 650, 380], SPEED_ICON = ['🐢', '🐇', '🚀'];
+function D(){ return SPEEDS[speed]; }
+$('speedBtn').textContent = SPEED_ICON[speed];
+$('speedBtn').addEventListener('click', () => { speed = (speed + 1) % 3; store.set('speed', speed); $('speedBtn').textContent = SPEED_ICON[speed]; toast(['Despacito 🐢', 'Normal 🐇', '¡Superrápido! 🚀'][speed]); });
+
+function moveBy(sign, d, quiet){
+  const [dx, dy] = DIRS[R.dir]; const nx = R.x + dx * sign, ny = R.y + dy * sign;
+  if (!inBounds(nx, ny)){ if (!quiet) { SFX.bump(); bubble('¡Ups! Una pared'); } playFx('bump', d); return false; }
+  R.x = nx; R.y = ny; place(d); if (!quiet) SFX.move(); return true;
+}
+function turnBy(s, d, quiet){ R.dir = (R.dir + s + 4) % 4; R.rot += 90 * s; place(d); if (!quiet) SFX.turn(); }
+
+/* ---------- Estrellas ---------- */
+let stars = store.get('stars', 0), star = null;
+$('stars').textContent = stars;
+function newStar(){
+  let x, y; do { x = Math.floor(Math.random() * COLS); y = Math.floor(Math.random() * ROWS); } while (x === R.x && y === R.y);
+  star = { x, y }; const s = $('star'); s.style.setProperty('--sx', x); s.style.setProperty('--sy', y); s.hidden = false;
+}
+function checkStar(){
+  if (star && R.x === star.x && R.y === star.y){
+    star = null; $('star').hidden = true; stars++; store.set('stars', stars); $('stars').textContent = stars;
+    SFX.win(); confetti(); bubble('¡Estrella conseguida!'); setTimeout(newStar, 1800);
+  }
+}
+$('newStarBtn').addEventListener('click', () => { newStar(); SFX.add(); });
+$('starsBtn').addEventListener('click', () => toast(stars ? 'Llevas ' + stars + ' estrellas ⭐ ¡Genial!' : 'Lleva a EaRL hasta la estrella ⭐'));
+
+/* ---------- Órdenes ---------- */
+const ARROW = {
+  fwd: '<svg viewBox="0 0 24 24"><path d="M12 4l7 8h-4.5v8h-5v-8H5z" fill="currentColor"/></svg>',
+  back: '<svg viewBox="0 0 24 24"><path d="M12 20l7-8h-4.5V4h-5v8H5z" fill="currentColor"/></svg>',
+  left: '<svg viewBox="0 0 24 24"><path d="M10 5L4 11l6 6v-4h4a4 4 0 0 1 4 4v2h3v-2a7 7 0 0 0-7-7h-4z" fill="currentColor"/></svg>',
+  right: '<svg viewBox="0 0 24 24"><path d="M14 5l6 6-6 6v-4h-4a4 4 0 0 0-4 4v2H3v-2a7 7 0 0 1 7-7h4z" fill="currentColor"/></svg>'
+};
+const NAMES = { fwd: 'Adelante', back: 'Atrás', left: 'Izquierda', right: 'Derecha', wait: 'Pausa', spin: 'Giro loco', wiggle: 'Meneo', hop: 'Salto', light: 'Luz', beep: 'Sonido', say: 'Hablar', voice: 'Mi voz' };
+const EMOJI = { wait: '⏸️', spin: '🌀', wiggle: '💃', hop: '🐸', light: '💡', beep: '🎺', say: '💬', voice: '🗣️' };
+const clips = []; // grabaciones de esta sesión
+
+async function exec(c, d){
+  d = d || D();
+  switch (c.t){
+    case 'fwd': moveBy(1, d); await sleep(d + 60); checkStar(); break;
+    case 'back': moveBy(-1, d); await sleep(d + 60); checkStar(); break;
+    case 'left': turnBy(-1, d); await sleep(d + 60); break;
+    case 'right': turnBy(1, d); await sleep(d + 60); break;
+    case 'wait': await sleep(d * 1.4); break;
+    case 'spin': R.rot += 360; place(d * 1.6); SFX.spin(); await sleep(d * 1.6 + 60); break;
+    case 'wiggle': playFx('wig', d * 1.4); SFX.risa(); await sleep(d * 1.4 + 40); break;
+    case 'hop': playFx('hop', d); SFX.hop(); await sleep(d + 40); break;
+    case 'light': for (let i = 0; i < 3; i++){ setLed(i % 2 ? '#fff' : c.c); mat.classList.add('flash'); await sleep(110); mat.classList.remove('flash'); await sleep(90); } setLed(c.c); tone(1200, .1, 'sine', .1); await sleep(d * .4); break;
+    case 'beep': (SFX[c.s] || SFX.trompeta)(); playFx('hop', 400); await sleep(Math.max(d, 650)); break;
+    case 'say': bubble(c.text, 2200); await new Promise(res => { const done = () => res(); if (!speak(c.text, done)) setTimeout(done, 1200); setTimeout(done, 6000); }); break;
+    case 'voice': {
+      const clip = clips[c.i];
+      if (!clip){ bubble('🗣️ (grabación perdida)'); await sleep(900); break; }
+      bubble('🗣️ ' + clip.name, 1800);
+      await new Promise(res => { const a = new Audio(clip.url); a.onended = res; a.onerror = res; a.play().catch(res); setTimeout(res, 6500); });
+      break;
+    }
+  }
+}
+
+/* ---------- Programa ---------- */
+const MAX = 60;
+let prog = store.get('prog', null);
+if (!Array.isArray(prog)) prog = [{ t: 'fwd' }, { t: 'fwd' }, { t: 'right' }, { t: 'fwd' }, { t: 'wiggle' }, { t: 'beep', s: 'trompeta' }];
+prog = prog.filter(c => c && NAMES[c.t] && c.t !== 'voice');
+function saveProg(){ store.set('prog', prog.filter(c => c.t !== 'voice')); }
+function cardHTML(c){
+  if (ARROW[c.t]) return { cls: 'card mv', html: ARROW[c.t] };
+  let h = EMOJI[c.t];
+  if (c.t === 'beep'){ const s = SOUNDS.find(s => s[0] === c.s); h = s ? s[1] : '🎺'; }
+  if (c.t === 'light') h = '💡<i class="dot" style="background:' + c.c + '"></i>';
+  return { cls: 'card', html: h };
+}
+function renderStrip(){
+  const s = $('strip'); s.innerHTML = '';
+  if (!prog.length){ s.innerHTML = '<div class="empty-strip">Toca las flechas amarillas para darle órdenes a EaRL. Luego pulsa GO.</div>'; }
+  prog.forEach((c, i) => {
+    const b = document.createElement('button'); const h = cardHTML(c);
+    b.className = h.cls; b.innerHTML = h.html + '<span class="n">' + (i + 1) + '</span>';
+    b.setAttribute('aria-label', 'Paso ' + (i + 1) + ': ' + NAMES[c.t] + '. Toca para quitarlo');
+    b.addEventListener('click', () => { if (running) return; prog.splice(i, 1); saveProg(); renderStrip(); toast('Paso quitado'); });
+    s.appendChild(b);
+  });
+  $('count').textContent = prog.length + (prog.length === 1 ? ' paso' : ' pasos');
+  renderReal();
+}
+function add(c){
+  if (prog.length >= MAX){ toast('¡Programa lleno! Máximo ' + MAX + ' pasos'); return; }
+  prog.push(c); saveProg(); renderStrip(); SFX.add();
+  const s = $('strip'); s.scrollLeft = s.scrollWidth;
+}
+document.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => add({ t: b.dataset.add })));
+document.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => pick(b.dataset.pick)));
+$('undoBtn').addEventListener('click', () => { if (running || !prog.length) return; prog.pop(); saveProg(); renderStrip(); });
+let clearArm = 0;
+$('clearBtn').addEventListener('click', () => {
+  if (running || !prog.length) return;
+  if (Date.now() - clearArm > 2500){ clearArm = Date.now(); toast('Toca otra vez 🗑️ para borrarlo todo'); return; }
+  prog = []; saveProg(); renderStrip(); toast('Programa borrado');
+});
+
+let running = false, stopReq = false;
+async function run(){
+  if (running){ stopReq = true; return; }
+  if (dance.on) stopDance();
+  if (!prog.length){ toast('Primero dale órdenes con las flechas'); bubble('¿Qué hago?'); return; }
+  running = true; stopReq = false; $('goBtn').classList.add('stop'); $('goBtn').textContent = '■';
+  const cards = $('strip').children;
+  for (let i = 0; i < prog.length && !stopReq; i++){
+    [...cards].forEach(c => c.classList.remove('now'));
+    const card = cards[i]; if (card){ card.classList.add('now'); card.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+    await exec(prog[i]);
+  }
+  [...cards].forEach(c => c.classList.remove('now'));
+  running = false; $('goBtn').classList.remove('stop'); $('goBtn').textContent = 'GO';
+  if (!stopReq) bubble('¡Terminé! 🎉');
+}
+$('goBtn').addEventListener('click', run);
+function home(){ R.x = 0; R.y = ROWS - 1; R.dir = 0; R.rot = 0; place(400); }
+mat.addEventListener('dblclick', home);
+
+/* Guardar / cargar */
+const FUN_NAMES = ['Paseo', 'Aventura', 'Baile', 'Misión', 'Viaje', 'Fiesta', 'Carrera', 'Sorpresa'];
+const FUN_EMOJI = ['🚀', '🦖', '🌈', '🐙', '🍕', '🦄', '⚽', '🐝'];
+$('saveBtn').addEventListener('click', () => {
+  const list = store.get('saved', []);
+  const p = prog.filter(c => c.t !== 'voice');
+  if (!p.length){ toast('El programa está vacío'); return; }
+  const k = list.length;
+  list.unshift({ name: FUN_NAMES[k % 8] + ' ' + (k + 1), e: FUN_EMOJI[k % 8], prog: p, at: Date.now() });
+  store.set('saved', list.slice(0, 20)); SFX.win(); toast('Guardado: ' + list[0].e + ' ' + list[0].name);
+});
+$('loadBtn').addEventListener('click', () => {
+  const list = store.get('saved', []);
+  const box = document.createElement('div'); box.className = 'list';
+  if (!list.length) box.innerHTML = '<p style="color:var(--muted);font-weight:700">Aún no has guardado ninguno. Pulsa 💾 Guardar.</p>';
+  list.forEach((p, i) => {
+    const it = document.createElement('div'); it.className = 'item';
+    it.innerHTML = '<span class="e"></span><span class="m"><b></b><small></small></span><button class="x" aria-label="Borrar">🗑️</button>';
+    it.querySelector('.e').textContent = p.e; it.querySelector('b').textContent = p.name;
+    it.querySelector('small').textContent = p.prog.length + ' pasos';
+    it.querySelector('.m').addEventListener('click', () => { prog = p.prog.slice(); saveProg(); renderStrip(); closeSheet(); toast('Cargado ' + p.e + ' ' + p.name); });
+    it.querySelector('.e').addEventListener('click', () => it.querySelector('.m').click());
+    it.querySelector('.x').addEventListener('click', () => { list.splice(i, 1); store.set('saved', list); it.remove(); });
+    box.appendChild(it);
+  });
+  openSheet('📂 Mis programas', box);
+});
+
+/* Hoja de selección */
+function openSheet(title, node){ $('sheetT').textContent = title; const b = $('sheetB'); b.innerHTML = ''; b.appendChild(node); $('scrim').classList.add('on'); $('sheet').classList.add('on'); }
+function closeSheet(){ $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); }
+$('scrim').addEventListener('click', closeSheet);
+function grid(items){
+  const g = document.createElement('div'); g.className = 'picks';
+  items.forEach(it => { const b = document.createElement('button'); b.className = 'pick'; b.innerHTML = it.html; b.addEventListener('click', () => { it.go(); closeSheet(); }); g.appendChild(b); });
+  return g;
+}
+function pick(kind){
+  if (kind === 'beep') openSheet('🎺 ¿Qué sonido?', grid(SOUNDS.map(([k, e, n]) => ({ html: '<span class="e">' + e + '</span>' + n, go(){ SFX[k](); add({ t: 'beep', s: k }); } }))));
+  if (kind === 'light') openSheet('💡 ¿De qué color?', grid(COLORS.map(([c, n]) => ({ html: '<span class="sw" style="background:' + c + '"></span>' + n, go(){ setLed(c); add({ t: 'light', c }); } }))));
+  if (kind === 'say') openSheet('💬 ¿Qué dice EaRL?', grid(PHRASES.map(p => ({ html: '<span class="e">💬</span>' + p, go(){ speak(p); add({ t: 'say', text: p }); } }))));
+  if (kind === 'voice'){
+    if (!clips.length){ toast('Primero graba tu voz en la pestaña 🎤 Voz'); showTab('voice'); return; }
+    openSheet('🗣️ ¿Qué grabación?', grid(clips.map((c, i) => ({ html: '<span class="e">🗣️</span>' + c.name, go(){ add({ t: 'voice', i }); } }))));
+  }
+}
+
+/* ---------- Pestañas ---------- */
+function showTab(t){
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  ['prog', 'dance', 'voice', 'real'].forEach(v => $('v-' + v).hidden = v !== t);
+  $('panel').scrollTop = 0;
+}
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+/* ---------- Música ---------- */
+const SONGS = [
+  { id: 'pop', name: 'Pop Robótico', e: '🤖', bpm: 112, kick: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.',
+    bass: [36,0,36,0,31,0,31,0,33,0,33,0,29,0,31,0], lead: [72,0,76,0,79,0,76,0,74,0,77,0,76,74,72,0,69,0,72,0,76,0,74,72,71,0,74,0,72,0,0,0], wave: 'square' },
+  { id: 'disco', name: 'Disco Galáctico', e: '🪩', bpm: 120, kick: 'x...x...x...x...', snare: '....x.......x...', hat: '.x.x.x.x.x.x.x.x',
+    bass: [45,57,45,57,43,55,43,55,41,53,41,53,40,52,40,52], lead: [69,0,72,74,76,0,74,72,69,0,0,67,69,0,0,0,72,0,74,76,79,0,76,74,76,0,74,0,72,0,71,0], wave: 'sawtooth' },
+  { id: 'reggae', name: 'Reggae Tortuga', e: '🐢', bpm: 84, kick: '....x.......x...', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.',
+    bass: [43,0,0,43,47,0,50,0,48,0,0,48,47,0,45,0], lead: [0,0,71,0,0,0,71,0,0,0,72,0,0,0,72,0,0,0,74,0,0,0,74,0,0,0,72,0,0,0,71,0], wave: 'triangle' },
+  { id: 'fiesta', name: 'Fiesta Loca', e: '🎉', bpm: 138, kick: 'x...x...x...x...', snare: '....x..x....x...', hat: 'xxxxxxxxxxxxxxxx',
+    bass: [38,38,50,38,38,50,38,50,43,43,55,43,45,45,57,45], lead: [74,0,74,76,78,0,76,74,73,0,71,0,69,0,0,0,74,0,78,0,81,0,78,0,79,78,76,74,76,0,0,0], wave: 'square' }
+];
+let song = SONGS[0], bpm = song.bpm, userTrack = null, style = 'robot';
+function renderSongs(){
+  const box = $('songs'); box.innerHTML = '';
+  const all = SONGS.concat(userTrack ? [{ id: 'user', name: userTrack.name, e: '🎧', bpm: userTrack.bpm }] : []);
+  all.forEach(s => {
+    const b = document.createElement('button'); b.className = 'song' + (s.id === song.id ? ' on' : '');
+    b.innerHTML = '<span class="e"></span><span style="min-width:0"><b></b><small></small></span>';
+    b.querySelector('.e').textContent = s.e; b.querySelector('b').textContent = s.name; b.querySelector('small').textContent = Math.round(s.bpm) + ' golpes/min';
+    b.addEventListener('click', () => { song = s; bpm = Math.round(s.bpm); $('tempo').value = bpm; $('tempoTxt').textContent = bpm + ' /min'; renderSongs(); if (dance.on){ stopDance(); startDance(); } });
+    box.appendChild(b);
+  });
+}
+$('tempo').addEventListener('input', e => { bpm = +e.target.value; $('tempoTxt').textContent = bpm + ' /min'; });
+$('tempo').addEventListener('change', () => { if (dance.on && song.id === 'user'){ stopDance(); startDance(); } });
+document.querySelectorAll('[data-style]').forEach(b => b.addEventListener('click', () => {
+  style = b.dataset.style; document.querySelectorAll('[data-style]').forEach(x => x.classList.toggle('on', x === b));
+}));
+
+/* Secuenciador */
+const dance = { on: false, timer: null, step: 0, next: 0, beat: 0, src: null, mic: null, raf: 0, timeouts: [] };
+function drum(kind, t){
+  if (kind === 'k') tone(150, .22, 'sine', .55, t, 45);
+  if (kind === 's'){ noise(.14, .25, t, 1800); tone(220, .08, 'triangle', .12, t); }
+  if (kind === 'h') noise(.04, .07, t, 8000);
+}
+function scheduleSong(){
+  const a = ctx; const stepDur = 60 / bpm / 2;
+  while (dance.next < a.currentTime + .12){
+    const i = dance.step % 16, j = dance.step % 32, t = dance.next;
+    if (song.kick[i] === 'x') drum('k', t);
+    if (song.snare[i] === 'x') drum('s', t);
+    if (song.hat[i] === 'x') drum('h', t);
+    if (song.bass[i]) tone(mtof(song.bass[i]), stepDur * .9, 'triangle', .22, t);
+    if (song.lead[j]) tone(mtof(song.lead[j]), stepDur * .8, song.wave, .06, t);
+    if (i % 2 === 0) beatAt(t, stepDur * 2);
+    dance.step++; dance.next += stepDur;
+  }
+}
+function beatAt(t, period){
+  const ms = Math.max(0, (t - ctx.currentTime) * 1000);
+  dance.timeouts.push(setTimeout(() => onBeat(period * 1000), ms));
+  if (dance.timeouts.length > 50) dance.timeouts.splice(0, 25);
+}
+function startDance(opts){
+  const a = audio(); if (!a){ toast('Este navegador no tiene sonido'); return; }
+  if (running) stopReq = true;
+  dance.on = true; dance.step = 0; dance.beat = 0; dance.next = a.currentTime + .08; dance.progI = 0;
+  dance.real = !!(opts && opts.real);
+  $('danceBtn').classList.add('stop'); $('danceBtn').innerHTML = '⏹️ Parar';
+  if (song.id === 'user' && userTrack){
+    const src = a.createBufferSource(); src.buffer = userTrack.buf;
+    src.playbackRate.value = bpm / userTrack.bpm; src.connect(master);
+    const t0 = a.currentTime + .1; src.start(t0); dance.src = src;
+    src.onended = () => { if (dance.src === src) stopDance(); };
+    const period = 60 / bpm; let k = 0; const phase = userTrack.phase / src.playbackRate.value;
+    dance.timer = setInterval(() => {
+      let t; while ((t = t0 + phase + k * period) < a.currentTime + .15){ if (t >= a.currentTime - .05) beatAt(t, period); k++; }
+    }, 30);
+  } else {
+    dance.timer = setInterval(scheduleSong, 25); scheduleSong();
+  }
+}
+function stopDance(){
+  dance.on = false; clearInterval(dance.timer); dance.timeouts.forEach(clearTimeout); dance.timeouts = [];
+  if (dance.src){ try{ dance.src.stop(); }catch(e){} dance.src = null; }
+  $('danceBtn').classList.remove('stop'); $('danceBtn').innerHTML = '💃 ¡A bailar!';
+  $('realDanceBtn').textContent = '🎶 3, 2, 1… ¡GO!';
+  mat.classList.remove('flash');
+}
+$('danceBtn').addEventListener('click', () => { if (dance.on || listen.on){ stopDance(); stopListen(); } else startDance(); });
+
+const NOTES = ['🎵', '🎶', '✨', '💫', '⭐'];
+function floatNote(){
+  const n = document.createElement('div'); n.className = 'note'; n.textContent = NOTES[Math.floor(Math.random() * NOTES.length)];
+  n.style.left = ((R.x + .5) * cell - 10 + (Math.random() * 30 - 15)) + 'px'; n.style.top = (R.y * cell) + 'px';
+  mat.appendChild(n); setTimeout(() => n.remove(), 1400);
+}
+function onBeat(periodMs){
+  if (!dance.on && !listen.on) return;
+  const b = dance.beat++;
+  setLed(COLORS[b % COLORS.length][0]);
+  mat.classList.add('flash'); setTimeout(() => mat.classList.remove('flash'), 90);
+  if (b % 2 === 0) floatNote();
+  if (dance.real) return; // con EaRL de verdad, la app solo pone la música y las luces
+  const d = Math.min(periodMs * .85, 700);
+  const move = pickMove(b);
+  doMove(move, d);
+}
+function pickMove(b){
+  if (style === 'robot') return ['fwd', 'sway', 'right', 'hop', 'back', 'sway', 'left', 'wig'][b % 8];
+  if (style === 'suave') return ['sway', 'sway', 'wig', 'hop'][b % 4];
+  if (style === 'loco'){ const m = ['fwd', 'back', 'left', 'right', 'spin', 'hop', 'wig', 'sway']; return m[Math.floor(Math.random() * m.length)]; }
+  if (style === 'prog'){
+    const p = prog.filter(c => ['fwd', 'back', 'left', 'right', 'spin', 'wiggle', 'hop', 'light', 'beep'].includes(c.t));
+    if (!p.length) return 'sway';
+    const c = p[dance.progI++ % p.length];
+    return { wiggle: 'wig', light: 'hop', beep: 'hop' }[c.t] || c.t;
+  }
+  return 'hop';
+}
+function doMove(m, d){
+  if (m === 'fwd' || m === 'back'){ if (!moveBy(m === 'fwd' ? 1 : -1, d, true)) turnBy(1, d, true); else checkStar(); }
+  else if (m === 'left') turnBy(-1, d, true);
+  else if (m === 'right') turnBy(1, d, true);
+  else if (m === 'spin'){ R.rot += 360; place(d); }
+  else playFx(m, d);
+}
+
+/* Canción del móvil: buscar el ritmo */
+$('fileIn').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const a = audio(); if (!a){ toast('Este navegador no tiene sonido'); return; }
+  toast('Escuchando tu canción… 🎧', 4000);
+  try{
+    const ab = await f.arrayBuffer();
+    const buf = await new Promise((res, rej) => { const p = a.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+    const { bpm: tb, phase } = findBeat(buf);
+    userTrack = { buf, bpm: tb, phase, name: f.name.replace(/\.[^.]+$/, '').slice(0, 22) || 'Mi canción' };
+    song = { id: 'user', name: userTrack.name, e: '🎧', bpm: tb }; bpm = Math.round(tb);
+    $('tempo').value = bpm; $('tempoTxt').textContent = bpm + ' /min'; renderSongs();
+    toast('¡Lista! Va a ' + bpm + ' golpes por minuto');
+  }catch(err){ toast('No pude leer esa canción. Prueba con un MP3'); }
+  e.target.value = '';
+});
+function findBeat(buf){
+  // Energía de graves cada 10 ms → golpes → el ritmo que más se repite
+  const sr = buf.sampleRate, ch = buf.getChannelData(0), hop = Math.floor(sr / 100);
+  const n = Math.min(Math.floor(ch.length / hop), 100 * 90);
+  const env = new Float32Array(n); let lp = 0; const k = 1 - Math.exp(-2 * Math.PI * 180 / sr);
+  for (let i = 0; i < n; i++){ let s = 0; for (let j = i * hop, e = j + hop; j < e; j++){ lp += k * (ch[j] - lp); s += lp * lp; } env[i] = Math.sqrt(s / hop); }
+  const on = new Float32Array(n);
+  for (let i = 1; i < n; i++) on[i] = Math.max(0, env[i] - env[i - 1]);
+  let best = 0, bestLag = 50;
+  for (let lag = 35; lag <= 86; lag++){ // 70 a 171 golpes por minuto
+    let s = 0; for (let i = lag; i < n; i++) s += on[i] * on[i - lag];
+    s *= 1 + .15 * Math.exp(-Math.pow((lag - 50) / 15, 2));
+    if (s > best){ best = s; bestLag = lag; }
+  }
+  let bp = 0, bestPhase = 0;
+  for (let p = 0; p < bestLag; p++){ let s = 0; for (let i = p; i < n; i += bestLag) s += on[i]; if (s > bp){ bp = s; bestPhase = p; } }
+  return { bpm: 6000 / bestLag, phase: bestPhase / 100 };
+}
+
+/* Escuchar música por el micrófono */
+const listen = { on: false, stream: null, raf: 0 };
+async function startListen(){
+  const a = audio();
+  if (!a || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('Aquí no hay micrófono. Abre la app en Safari o Chrome', 3200); return; }
+  try{
+    listen.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  }catch(e){ toast('Sin permiso para el micrófono. Abre la app en Safari y deja usar el micro', 3600); return; }
+  if (dance.on) stopDance();
+  const src = a.createMediaStreamSource(listen.stream);
+  const lpf = a.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 200;
+  const an = a.createAnalyser(); an.fftSize = 1024; src.connect(lpf); lpf.connect(an);
+  const data = new Float32Array(an.fftSize);
+  let avg = 0, last = 0, gaps = [];
+  listen.on = true; dance.beat = 0; dance.real = false;
+  $('listenBtn').classList.add('stop'); $('listenBtn').innerHTML = '⏹️ Dejar de escuchar';
+  const loop = () => {
+    if (!listen.on) return;
+    an.getFloatTimeDomainData(data); let s = 0; for (let i = 0; i < data.length; i++) s += data[i] * data[i];
+    const e = Math.sqrt(s / data.length); const now = performance.now();
+    if (e > avg * 1.45 && e > .01 && now - last > 280){
+      if (last) { gaps.push(now - last); if (gaps.length > 8) gaps.shift(); }
+      last = now; const g = gaps.length ? gaps.slice().sort((x, y) => x - y)[gaps.length >> 1] : 500;
+      onBeat(Math.min(g, 800));
+    }
+    avg = avg * .93 + e * .07;
+    listen.raf = requestAnimationFrame(loop);
+  };
+  loop(); toast('¡Pon música! EaRL está escuchando 👂');
+}
+function stopListen(){
+  listen.on = false; cancelAnimationFrame(listen.raf);
+  if (listen.stream){ listen.stream.getTracks().forEach(t => t.stop()); listen.stream = null; }
+  $('listenBtn').classList.remove('stop'); $('listenBtn').innerHTML = '👂 Escuchar la música';
+}
+$('listenBtn').addEventListener('click', () => listen.on ? stopListen() : startListen());
+
+/* ---------- Voz ---------- */
+let voiceMode = 'add';
+document.querySelectorAll('[data-vm]').forEach(b => b.addEventListener('click', () => { voiceMode = b.dataset.vm; document.querySelectorAll('[data-vm]').forEach(x => x.classList.toggle('on', x === b)); }));
+const NUM = { un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10 };
+const WORDS = [
+  [/^(adelante|avanza|delante|recto|arriba|alante)$/, { t: 'fwd' }],
+  [/^(atras|retrocede|abajo|marcha)$/, { t: 'back' }],
+  [/^izquierda$/, { t: 'left' }], [/^derecha$/, { t: 'right' }],
+  [/^(gira|vuelta|vueltas|giro|remolino)$/, { t: 'spin' }],
+  [/^(baila|bailar|menea|meneo|mueve)$/, { t: 'wiggle' }],
+  [/^(salta|salto|brinca)$/, { t: 'hop' }],
+  [/^(luz|luces|brilla|color)$/, 'light'],
+  [/^(suena|sonido|pita|toca|trompeta)$/, { t: 'beep', s: 'trompeta' }],
+  [/^(espera|pausa|quieto)$/, { t: 'wait' }],
+  [/^(vamos|go|empieza|ejecuta|adelantee)$/, 'go'],
+  [/^(para|stop|alto|basta)$/, 'stop'],
+  [/^(borra|borrar|limpia)$/, 'clear']
+];
+function parseVoice(text){
+  const toks = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ ]/g, ' ').split(/\s+/).filter(Boolean);
+  const out = []; let pend = 0;
+  for (let i = 0; i < toks.length; i++){
+    const w = toks[i]; const n = NUM[w] || (/^\d+$/.test(w) ? Math.min(+w, 10) : 0);
+    if (n){ pend = n; continue; }
+    const hit = WORDS.find(([re]) => re.test(w)); if (!hit) continue;
+    let c = hit[1];
+    if (c === 'light') c = { t: 'light', c: COLORS[Math.floor(Math.random() * COLORS.length)][0] };
+    if (typeof c === 'string'){ out.push(c); pend = 0; continue; }
+    let times = pend || 1; const nx = toks[i + 1];
+    if (!pend && nx && (NUM[nx] || /^\d+$/.test(nx))){ times = NUM[nx] || Math.min(+nx, 10); i++; }
+    for (let k = 0; k < times; k++) out.push(Object.assign({}, c));
+    pend = 0;
+  }
+  return out;
+}
+async function applyVoice(cmds){
+  for (const c of cmds){
+    if (c === 'go'){ run(); continue; }
+    if (c === 'stop'){ stopReq = true; stopDance(); continue; }
+    if (c === 'clear'){ prog = []; saveProg(); renderStrip(); continue; }
+    if (voiceMode === 'add') add(c); else await exec(c);
+  }
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recOn = false;
+$('micBtn').addEventListener('click', () => {
+  if (!SR){ $('heard').textContent = 'Este navegador no entiende la voz. Prueba en Safari o Chrome.'; return; }
+  if (recOn){ try{ rec.stop(); }catch(e){} return; }
+  rec = new SR(); rec.lang = 'es-ES'; rec.interimResults = false; rec.maxAlternatives = 1; rec.continuous = false;
+  rec.onstart = () => { recOn = true; $('micBtn').classList.add('on'); $('heard').textContent = 'Te escucho… 👂'; };
+  rec.onend = () => { recOn = false; $('micBtn').classList.remove('on'); };
+  rec.onerror = e => { $('heard').textContent = e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Sin permiso para el micro. Abre la app en Safari y déjale usarlo.' : 'No te he oído. ¡Prueba otra vez!'; };
+  rec.onresult = e => {
+    const text = e.results[0][0].transcript; const cmds = parseVoice(text);
+    $('heard').textContent = '«' + text + '»' + (cmds.length ? ' ✅' : ' 🤔 no lo entendí');
+    if (cmds.length){ SFX.add(); applyVoice(cmds); }
+  };
+  try{ rec.start(); }catch(e){ $('heard').textContent = 'No pude usar el micro. Prueba otra vez.'; }
+});
+
+/* Grabar mensajes */
+let mr = null;
+$('recBtn').addEventListener('click', async () => {
+  if (mr && mr.state === 'recording'){ mr.stop(); return; }
+  if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('Aquí no se puede grabar. Abre la app en Safari', 3200); return; }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch(e){ toast('Sin permiso para el micro. Abre la app en Safari y deja usarlo', 3600); return; }
+  const chunks = []; mr = new MediaRecorder(stream);
+  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    $('recBtn').classList.remove('stop'); $('recBtn').innerHTML = '⏺️ Grabar mi voz';
+    if (!chunks.length) return;
+    const url = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || 'audio/mp4' }));
+    const i = clips.length; clips.push({ url, name: 'Mensaje ' + (i + 1) });
+    renderClips(); add({ t: 'voice', i }); toast('¡Grabado! Ya está en tu programa 🗣️');
+  };
+  mr.start(); $('recBtn').classList.add('stop'); $('recBtn').innerHTML = '⏹️ Parar (graba 5 s)';
+  setTimeout(() => { if (mr && mr.state === 'recording') mr.stop(); }, 5000);
+});
+function renderClips(){
+  const box = $('clips'); box.innerHTML = '';
+  clips.forEach((c, i) => {
+    const it = document.createElement('div'); it.className = 'item';
+    it.innerHTML = '<span class="e">🗣️</span><span class="m"><b></b><small>Se borra al cerrar la app</small></span><button class="x" aria-label="Escuchar">▶️</button><button class="x" aria-label="Añadir al programa">➕</button>';
+    it.querySelector('b').textContent = c.name;
+    const [play, plus] = it.querySelectorAll('.x');
+    play.addEventListener('click', () => new Audio(c.url).play().catch(() => {}));
+    plus.addEventListener('click', () => add({ t: 'voice', i }));
+    box.appendChild(it);
+  });
+}
+PHRASES.forEach(p => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = p; b.addEventListener('click', () => { speak(p); add({ t: 'say', text: p }); }); $('phrases').appendChild(b); });
+$('sayAdd').addEventListener('click', () => { const v = $('sayTxt').value.trim(); if (!v){ $('sayTxt').focus(); return; } speak(v); add({ t: 'say', text: v }); $('sayTxt').value = ''; });
+$('sayTxt').addEventListener('keydown', e => { if (e.key === 'Enter') $('sayAdd').click(); });
+
+/* ---------- EaRL de verdad ---------- */
+const REAL = ['fwd', 'back', 'left', 'right', 'wait'];
+function realSteps(){ return prog.filter(c => REAL.includes(c.t)); }
+function renderReal(){
+  if (typeof gi !== 'undefined' && gi !== -2){ gi = -2; $('guide').hidden = true; $('guideBtn').textContent = '👉 Guíame paso a paso'; }
+  const box = $('realSeq'); box.innerHTML = '';
+  prog.forEach(c => { const h = cardHTML(c); const d = document.createElement('div'); d.className = h.cls + (REAL.includes(c.t) ? '' : ' skip'); d.innerHTML = h.html; box.appendChild(d); });
+  const skipped = prog.length - realSteps().length;
+  $('realNote').textContent = !prog.length ? 'Tu programa está vacío. Hazlo en 🧩 Programar.'
+    : skipped ? 'Los pasos transparentes (' + skipped + ') solo los hace el EaRL de la pantalla. EaRL de verdad hace flechas y pausas.' : '¡Todos estos pasos los sabe hacer EaRL!';
+}
+let gi = -2; // -2 sin empezar · -1 aviso de borrar · 0..n-1 pasos
+const SAY_KEY = { fwd: 'Flecha adelante', back: 'Flecha atrás', left: 'Flecha izquierda', right: 'Flecha derecha', wait: 'Pausa' };
+function showGuide(){
+  const steps = realSteps(), g = $('guide'); g.hidden = false;
+  if (gi === -1){
+    g.innerHTML = '<div class="step">Si EaRL tiene un programa viejo, bórralo primero</div><small>Mira en su manual qué botón borra la memoria</small>';
+    $('guideBtn').textContent = '👍 Listo, empezamos'; speak('Si EaRL tiene un programa viejo, bórralo primero'); return;
+  }
+  if (gi >= steps.length){
+    g.innerHTML = '<div class="bigkey goK">GO</div><div class="step">¡Ahora pulsa GO!</div><small>EaRL hará los ' + steps.length + ' pasos</small>';
+    $('guideBtn').textContent = '🔁 Empezar otra vez'; speak('¡Ahora pulsa GO!'); SFX.win(); gi = -2; return;
+  }
+  const c = steps[gi];
+  g.innerHTML = '<div class="bigkey' + (c.t === 'wait' ? ' pk' : '') + '">' + (ARROW[c.t] || '<span style="font-size:60px">⏸️</span>') + '</div><div class="step"></div><small></small>';
+  g.querySelector('.step').textContent = 'Pulsa: ' + SAY_KEY[c.t];
+  g.querySelector('small').textContent = 'Paso ' + (gi + 1) + ' de ' + steps.length;
+  $('guideBtn').textContent = '✅ ¡Hecho! Siguiente'; speak(SAY_KEY[c.t]); SFX.add();
+  $('copySec').scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+$('guideBtn').addEventListener('click', () => {
+  if (!realSteps().length){ toast('Primero haz un programa con flechas'); return; }
+  gi++; showGuide();
+});
+
+let secPerStep = store.get('secPerStep', 1), measT = 0;
+function measLabel(){ $('measTxt').textContent = (store.get('secPerStep', null) ? 'Medido · ' : 'Sin medir · ') + secPerStep.toFixed(2).replace('.', ',') + ' s por paso'; }
+measLabel();
+$('measBtn').addEventListener('click', () => {
+  const n = realSteps().length;
+  if (!measT){
+    if (!n){ toast('Primero haz un programa con flechas'); return; }
+    measT = performance.now(); $('measBtn').textContent = '🛑 Ya paró'; $('measTxt').textContent = 'Midiendo… ⏱️'; SFX.add(); return;
+  }
+  const s = (performance.now() - measT) / 1000; measT = 0; $('measBtn').textContent = '⏱️ Empieza';
+  if (s < .5){ toast('Muy rápido. Prueba otra vez'); measLabel(); return; }
+  secPerStep = s / n; store.set('secPerStep', secPerStep); measLabel(); SFX.win();
+  toast('EaRL tarda ' + secPerStep.toFixed(1).replace('.', ',') + ' s en cada paso');
+});
+$('realDanceBtn').addEventListener('click', async () => {
+  if (dance.on){ stopDance(); return; }
+  if (song.id === 'user' && !userTrack) song = SONGS[0];
+  // Un golpe de música por paso de EaRL (o dos, si el paso es lento)
+  let b = 60 / secPerStep; while (b < 75) b *= 2; while (b > 170) b /= 2;
+  bpm = Math.round(b); $('tempo').value = bpm; $('tempoTxt').textContent = bpm + ' /min';
+  const btn = $('realDanceBtn');
+  for (const n of ['3', '2', '1']){ btn.textContent = n + '…'; tone(660, .15, 'square', .15); speak(n); await sleep(900); }
+  btn.textContent = '⏹️ Parar la música'; tone(1320, .3, 'square', .15); speak('¡GO!');
+  startDance({ real: true });
+});
+
+/* ---------- Confeti ---------- */
+function confetti(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = $('confetti'); cv.hidden = false; const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; const c = cv.getContext('2d'); c.scale(dpr, dpr);
+  const cols = ['#FF4FA0', '#FFC93C', '#1FC46B', '#3AA0FF', '#B65CFF'];
+  const ps = Array.from({ length: 90 }, () => ({ x: innerWidth / 2, y: innerHeight * .3, vx: (Math.random() - .5) * 12, vy: Math.random() * -12 - 2, r: Math.random() * 6 + 4, c: cols[Math.floor(Math.random() * 5)], a: Math.random() * 6 }));
+  const t0 = performance.now();
+  (function f(t){
+    c.clearRect(0, 0, innerWidth, innerHeight);
+    ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.a += .2; c.save(); c.translate(p.x, p.y); c.rotate(p.a); c.fillStyle = p.c; c.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); c.restore(); });
+    if (t - t0 < 1800) requestAnimationFrame(f); else cv.hidden = true;
+  })(t0);
+}
+
+/* ---------- Inicio ---------- */
+layout(); place(0); setLed('#3AA0FF'); newStar(); renderSongs(); renderStrip(); renderClips();
+requestAnimationFrame(layout);
+document.addEventListener('visibilitychange', () => { if (document.hidden){ stopDance(); stopListen(); } });
+if (window.speechSynthesis) speechSynthesis.getVoices();
+})();
+</script>
+<!--APP-END-->
+</body>
+</html>
